@@ -1,4 +1,3 @@
-
 import { Env, ChatMessage } from "./types";
 
 const MODEL_ID = "@cf/google/gemma-4-26b-a4b-it";
@@ -71,88 +70,34 @@ async function handleChatRequest(
 
 		const messages = [...(body.messages ?? [])];
 
-		if (
-			!messages.some(
-				(message) => message.role === "system",
-			)
-		) {
+		if (!messages.some((message) => message.role === "system")) {
 			messages.unshift({
 				role: "system",
 				content: SYSTEM_PROMPT,
 			});
 		}
 
-		const result = await env.AI.run(
+		const response = await env.AI.run(
 			MODEL_ID,
 			{
 				messages,
-				max_tokens: 512,
 				chat_template_kwargs: {
 					enable_thinking: false,
 				},
-			},
-			{
-				rejectIfBusy: true,
+				max_tokens: 512,
 			},
 		);
 
-		// Mostra nei log Cloudflare la risposta reale di Workers AI
-		console.log(
-			"RISPOSTA COMPLETA AI:",
-			JSON.stringify(result),
-		);
-
-		const aiResult = result as {
-			response?: unknown;
-			result?: {
-				response?: unknown;
-			};
-		};
-
-		let responseText = "";
-
-		if (typeof aiResult.response === "string") {
-			responseText = aiResult.response;
-		} else if (
-			aiResult.result &&
-			typeof aiResult.result.response === "string"
-		) {
-			responseText = aiResult.result.response;
-		}
-
-		if (!responseText) {
-			console.error(
-				"Workers AI ha restituito un formato inatteso:",
-				JSON.stringify(result),
-			);
-
-			return Response.json(
-				{
-					response:
-						"Non sono riuscito a ottenere una risposta dall'AI. Riprova tra qualche secondo.",
-				},
-				{
-					status: 502,
-				},
-			);
-		}
-
-		return Response.json({
-			response: responseText,
-		});
+		return Response.json(response);
 	} catch (error) {
-		console.error(
-			"Errore Workers AI:",
-			error,
-		);
+		console.error("Errore Workers AI:", error);
 
 		return Response.json(
 			{
-				response:
-					"Il servizio AI è momentaneamente occupato. Riprova tra qualche secondo.",
+				error: "Errore durante l'elaborazione della richiesta AI.",
 			},
 			{
-				status: 503,
+				status: 500,
 			},
 		);
 	}
