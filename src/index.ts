@@ -1,3 +1,4 @@
+
 import { Env, ChatMessage } from "./types";
 
 const MODEL_ID = "@cf/google/gemma-4-26b-a4b-it";
@@ -8,7 +9,6 @@ Sei l'assistente AI ufficiale di OnlineFacilePro.
 Rispondi sempre in italiano, in modo chiaro, semplice, utile e concreto.
 
 Puoi aiutare gli utenti con:
-
 - intelligenza artificiale
 - ChatGPT
 - strumenti AI
@@ -22,14 +22,11 @@ Puoi aiutare gli utenti con:
 - idee e opportunità nel mondo digitale
 
 Non promettere guadagni facili o garantiti.
-
 Non inventare informazioni.
-
 Quando non sei sicuro di qualcosa, dichiaralo chiaramente.
 
 Rispondi in modo sintetico ma completo.
-
-Usa elenchi puntati quando rendono la risposta più facile da leggere.
+Usa elenchi puntati quando aiutano la lettura.
 `;
 
 export default {
@@ -78,11 +75,24 @@ async function handleChatRequest(
 			});
 		}
 
-		const result = await env.AI.run(MODEL_ID, {
-			messages,
-			max_tokens: 512,
-			stream: false,
-		});
+		const result = await env.AI.run(
+			MODEL_ID,
+			{
+				messages,
+				max_tokens: 512,
+
+				// Disattiva il ragionamento esteso:
+				// vogliamo una risposta rapida per il chatbot.
+				chat_template_kwargs: {
+					enable_thinking: false,
+				},
+			},
+			{
+				// Se il modello è occupato, restituisce subito
+				// un errore invece di lasciare la richiesta in coda.
+				rejectIfBusy: true,
+			},
+		);
 
 		return Response.json(result);
 	} catch (error) {
@@ -91,10 +101,10 @@ async function handleChatRequest(
 		return Response.json(
 			{
 				error:
-					"Si è verificato un errore durante l'elaborazione della richiesta.",
+					"Il servizio AI è momentaneamente occupato. Riprova tra qualche secondo.",
 			},
 			{
-				status: 500,
+				status: 503,
 			},
 		);
 	}
