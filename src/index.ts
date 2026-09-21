@@ -96,7 +96,12 @@ async function handleChatRequest(
 			},
 		);
 
-		// Normalizziamo la risposta di Workers AI
+		// Mostra nei log Cloudflare la risposta reale di Workers AI
+		console.log(
+			"RISPOSTA COMPLETA AI:",
+			JSON.stringify(result),
+		);
+
 		const aiResult = result as {
 			response?: unknown;
 			result?: {
@@ -131,9 +136,6 @@ async function handleChatRequest(
 				},
 			);
 		}
-
-		// Il sito riceverà sempre questo formato:
-		// { "response": "testo della risposta" }
 
 		return Response.json({
 			response: responseText,
