@@ -1,32 +1,31 @@
 /**
- * LLM Chat App Frontend
- *
- * Handles the chat UI interactions and communication with the backend API.
+ * OnlineFacilePro AI - Frontend Chat
  */
 
-// DOM elements
+// Elementi della pagina
 const chatMessages = document.getElementById("chat-messages");
 const userInput = document.getElementById("user-input");
 const sendButton = document.getElementById("send-button");
 const typingIndicator = document.getElementById("typing-indicator");
 
-// Chat state
+// Cronologia della conversazione
 let chatHistory = [
 	{
 		role: "assistant",
 		content:
-			"Hello! I'm an LLM chat app powered by Cloudflare Workers AI. How can I help you today?",
+			"Ciao! 👋 Sono l'assistente AI di OnlineFacilePro. Posso aiutarti con AI, ChatGPT, strumenti digitali, lavoro online, TikTok, e-commerce, affiliate marketing e prodotti digitali. Cosa vuoi sapere?",
 	},
 ];
+
 let isProcessing = false;
 
-// Auto-resize textarea as user types
+// Ridimensiona automaticamente il campo di testo
 userInput.addEventListener("input", function () {
 	this.style.height = "auto";
 	this.style.height = this.scrollHeight + "px";
 });
 
-// Send message on Enter (without Shift)
+// Invio con Enter
 userInput.addEventListener("keydown", function (e) {
 	if (e.key === "Enter" && !e.shiftKey) {
 		e.preventDefault();
@@ -34,48 +33,52 @@ userInput.addEventListener("keydown", function (e) {
 	}
 });
 
-// Send button click handler
+// Pulsante Invia
 sendButton.addEventListener("click", sendMessage);
 
 /**
- * Sends a message to the chat API and processes the response
+ * Invia il messaggio all'AI
  */
 async function sendMessage() {
 	const message = userInput.value.trim();
 
-	// Don't send empty messages
 	if (message === "" || isProcessing) return;
 
-	// Disable input while processing
 	isProcessing = true;
 	userInput.disabled = true;
 	sendButton.disabled = true;
 
-	// Add user message to chat
+	// Mostra messaggio dell'utente
 	addMessageToChat("user", message);
 
-	// Clear input
+	// Svuota campo
 	userInput.value = "";
 	userInput.style.height = "auto";
 
-	// Show typing indicator
+	// Mostra indicatore
 	typingIndicator.classList.add("visible");
 
-	// Add message to history
-	chatHistory.push({ role: "user", content: message });
+	// Aggiunge il messaggio alla cronologia
+	chatHistory.push({
+		role: "user",
+		content: message,
+	});
+
+	let responseText = "";
 
 	try {
-		// Create new assistant response element
+		// Crea il contenitore della risposta AI
 		const assistantMessageEl = document.createElement("div");
 		assistantMessageEl.className = "message assistant-message";
 		assistantMessageEl.innerHTML = "<p></p>";
+
 		chatMessages.appendChild(assistantMessageEl);
+
 		const assistantTextEl = assistantMessageEl.querySelector("p");
 
-		// Scroll to bottom
 		chatMessages.scrollTop = chatMessages.scrollHeight;
 
-		// Send request to API
+		// Invia richiesta al Worker
 		const response = await fetch("/api/chat", {
 			method: "POST",
 			headers: {
@@ -86,145 +89,223 @@ async function sendMessage() {
 			}),
 		});
 
-		// Handle errors
+		// Controllo risposta
 		if (!response.ok) {
-			throw new Error("Failed to get response");
-		}
-		if (!response.body) {
-			throw new Error("Response body is null");
+			throw new Error("Errore nella risposta del server");
 		}
 
-		// Process streaming response
+		if (!response.body) {
+			throw new Error("Risposta del server vuota");
+		}
+
+		// Lettura dello streaming
 		const reader = response.body.getReader();
 		const decoder = new TextDecoder();
-		let responseText = "";
+
 		let buffer = "";
+		let sawDone = false;
+
 		const flushAssistantText = () => {
 			assistantTextEl.textContent = responseText;
 			chatMessages.scrollTop = chatMessages.scrollHeight;
 		};
 
-		let sawDone = false;
 		while (true) {
 			const { done, value } = await reader.read();
 
 			if (done) {
-				// Process any remaining complete events in buffer
+				// Elabora eventuali dati rimasti nel buffer
 				const parsed = consumeSseEvents(buffer + "\n\n");
+
 				for (const data of parsed.events) {
 					if (data === "[DONE]") {
+						sawDone = true;
 						break;
 					}
+
 					try {
 						const jsonData = JSON.parse(data);
-						// Handle both Workers AI format (response) and OpenAI format (choices[0].delta.content)
+
 						let content = "";
+
 						if (
 							typeof jsonData.response === "string" &&
 							jsonData.response.length > 0
 						) {
 							content = jsonData.response;
-						} else if (jsonData.choices?.[0]?.delta?.content) {
-							content = jsonData.choices[0].delta.content;
+						} else if (
+							jsonData.choices?.[0]?.delta?.content
+						) {
+							content =
+								jsonData.choices[0].delta.content;
 						}
+
 						if (content) {
 							responseText += content;
 							flushAssistantText();
 						}
 					} catch (e) {
-						console.error("Error parsing SSE data as JSON:", e, data);
+						console.warn(
+							"Dati SSE non elaborati:",
+							data,
+						);
 					}
 				}
+
 				break;
 			}
 
-			// Decode chunk
-			buffer += decoder.decode(value, { stream: true });
+			// Decodifica il blocco ricevuto
+			buffer += decoder.decode(value, {
+				stream: true,
+			});
+
 			const parsed = consumeSseEvents(buffer);
+
 			buffer = parsed.buffer;
+
 			for (const data of parsed.events) {
 				if (data === "[DONE]") {
 					sawDone = true;
 					buffer = "";
 					break;
 				}
+
 				try {
 					const jsonData = JSON.parse(data);
-					// Handle both Workers AI format (response) and OpenAI format (choices[0].delta.content)
+
 					let content = "";
+
+					// Formato Cloudflare Workers AI
 					if (
 						typeof jsonData.response === "string" &&
 						jsonData.response.length > 0
 					) {
 						content = jsonData.response;
-					} else if (jsonData.choices?.[0]?.delta?.content) {
-						content = jsonData.choices[0].delta.content;
 					}
+					// Formato compatibile OpenAI
+					else if (
+						jsonData.choices?.[0]?.delta?.content
+					) {
+						content =
+							jsonData.choices[0].delta.content;
+					}
+
 					if (content) {
 						responseText += content;
 						flushAssistantText();
 					}
 				} catch (e) {
-					console.error("Error parsing SSE data as JSON:", e, data);
+					console.warn(
+						"Dati SSE non elaborati:",
+						data,
+					);
 				}
 			}
+
 			if (sawDone) {
 				break;
 			}
 		}
 
-		// Add completed response to chat history
+		// Salva la risposta nella cronologia
 		if (responseText.length > 0) {
-			chatHistory.push({ role: "assistant", content: responseText });
+			chatHistory.push({
+				role: "assistant",
+				content: responseText,
+			});
 		}
 	} catch (error) {
-		console.error("Error:", error);
-		addMessageToChat(
-			"assistant",
-			"Sorry, there was an error processing your request.",
-		);
+		console.error("Errore:", error);
+
+		/*
+		 * Se l'AI ha già iniziato a rispondere,
+		 * non mostrare un falso messaggio di errore.
+		 */
+		if (responseText.length === 0) {
+			addMessageToChat(
+				"assistant",
+				"Mi dispiace, si è verificato un errore. Riprova tra qualche secondo.",
+			);
+		}
 	} finally {
-		// Hide typing indicator
+		// Nasconde indicatore
 		typingIndicator.classList.remove("visible");
 
-		// Re-enable input
+		// Riattiva input
 		isProcessing = false;
 		userInput.disabled = false;
 		sendButton.disabled = false;
+
 		userInput.focus();
 	}
 }
 
 /**
- * Helper function to add message to chat
+ * Aggiunge un messaggio alla chat
  */
 function addMessageToChat(role, content) {
 	const messageEl = document.createElement("div");
+
 	messageEl.className = `message ${role}-message`;
-	messageEl.innerHTML = `<p>${content}</p>`;
+
+	messageEl.innerHTML = `<p>${escapeHtml(content)}</p>`;
+
 	chatMessages.appendChild(messageEl);
 
-	// Scroll to bottom
 	chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
+/**
+ * Protegge il testo inserito nell'HTML
+ */
+function escapeHtml(text) {
+	const div = document.createElement("div");
+	div.textContent = text;
+	return div.innerHTML;
+}
+
+/**
+ * Elabora gli eventi SSE
+ */
 function consumeSseEvents(buffer) {
 	let normalized = buffer.replace(/\r/g, "");
+
 	const events = [];
+
 	let eventEndIndex;
-	while ((eventEndIndex = normalized.indexOf("\n\n")) !== -1) {
-		const rawEvent = normalized.slice(0, eventEndIndex);
-		normalized = normalized.slice(eventEndIndex + 2);
+
+	while (
+		(eventEndIndex = normalized.indexOf("\n\n")) !== -1
+	) {
+		const rawEvent = normalized.slice(
+			0,
+			eventEndIndex,
+		);
+
+		normalized = normalized.slice(
+			eventEndIndex + 2,
+		);
 
 		const lines = rawEvent.split("\n");
+
 		const dataLines = [];
+
 		for (const line of lines) {
 			if (line.startsWith("data:")) {
-				dataLines.push(line.slice("data:".length).trimStart());
+				dataLines.push(
+					line.slice("data:".length).trimStart(),
+				);
 			}
 		}
+
 		if (dataLines.length === 0) continue;
+
 		events.push(dataLines.join("\n"));
 	}
-	return { events, buffer: normalized };
+
+	return {
+		events,
+		buffer: normalized,
+	};
 }
