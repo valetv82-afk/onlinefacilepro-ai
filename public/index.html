@@ -1,19 +1,28 @@
 <!doctype html>
-<html lang="en">
+<html lang="it">
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>LLM Chat App</title>
+
+		<title>OnlineFacilePro AI</title>
+
+		<meta
+			name="description"
+			content="OnlineFacilePro AI: il tuo assistente intelligente per AI, strumenti digitali, lavoro online e nuove opportunità."
+		/>
+
 		<style>
 			:root {
-				--primary-color: #f6821f;
-				--primary-hover: #e67e22;
-				--light-bg: #f9fafb;
-				--border-color: #e5e7eb;
-				--text-color: #1f2937;
-				--text-light: #6b7280;
-				--user-msg-bg: #fff2e6;
-				--assistant-msg-bg: #f3f4f6;
+				--primary-color: #1f5cf5;
+				--primary-hover: #1749d1;
+				--navy: #0b1938;
+				--light-bg: #f3f6ff;
+				--white: #ffffff;
+				--border-color: #dfe7f5;
+				--text-color: #0b1938;
+				--text-light: #5f6b80;
+				--user-msg-bg: #e8efff;
+				--assistant-msg-bg: #f1f4fa;
 			}
 
 			* {
@@ -22,51 +31,123 @@
 				padding: 0;
 			}
 
+			html {
+				scroll-behavior: smooth;
+			}
+
 			body {
 				font-family:
-					-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu,
-					Cantarell, sans-serif;
+					-apple-system,
+					BlinkMacSystemFont,
+					"Segoe UI",
+					Roboto,
+					Oxygen,
+					Ubuntu,
+					Cantarell,
+					sans-serif;
 				line-height: 1.6;
 				color: var(--text-color);
-				max-width: 800px;
+				background:
+					linear-gradient(
+						180deg,
+						#ffffff 0%,
+						#f4f7ff 45%,
+						#eef3ff 100%
+					);
+				min-height: 100vh;
+				margin: 0;
+				padding: 0;
+			}
+
+			.page {
+				width: 100%;
+				max-width: 900px;
 				margin: 0 auto;
-				padding: 1rem;
+				padding: 0 18px 24px;
 			}
 
 			header {
 				text-align: center;
-				margin-bottom: 2rem;
-				padding: 1rem 0;
+				padding: 32px 10px 24px;
+				margin-bottom: 20px;
 				border-bottom: 1px solid var(--border-color);
 			}
 
+			.logo {
+				display: inline-flex;
+				align-items: center;
+				justify-content: center;
+				width: 58px;
+				height: 58px;
+				border-radius: 18px;
+				background: var(--primary-color);
+				color: white;
+				font-size: 29px;
+				font-weight: 800;
+				margin-bottom: 14px;
+				box-shadow: 0 10px 25px rgba(31, 92, 245, 0.22);
+			}
+
 			h1 {
-				font-size: 1.5rem;
+				font-size: clamp(1.8rem, 5vw, 2.5rem);
+				line-height: 1.15;
+				font-weight: 800;
+				letter-spacing: -0.03em;
+				color: var(--navy);
+				margin-bottom: 8px;
+			}
+
+			.subtitle {
+				color: var(--text-light);
+				font-size: 1rem;
+				max-width: 600px;
+				margin: 0 auto;
+			}
+
+			.badge {
+				display: inline-block;
+				margin-top: 14px;
+				padding: 7px 14px;
+				border-radius: 999px;
+				background: #e8efff;
 				color: var(--primary-color);
+				border: 1px solid #d6e2ff;
+				font-size: 0.85rem;
+				font-weight: 700;
 			}
 
 			.chat-container {
 				display: flex;
 				flex-direction: column;
-				height: calc(100vh - 200px);
-				min-height: 400px;
+				height: calc(100vh - 260px);
+				min-height: 500px;
+				background: var(--white);
 				border: 1px solid var(--border-color);
-				border-radius: 8px;
+				border-radius: 22px;
 				overflow: hidden;
+				box-shadow: 0 18px 50px rgba(11, 25, 56, 0.09);
 			}
 
 			.chat-messages {
 				flex: 1;
 				overflow-y: auto;
-				padding: 1rem;
-				background-color: var(--light-bg);
+				padding: 22px;
+				background:
+					radial-gradient(
+						circle at top right,
+						rgba(31, 92, 245, 0.08),
+						transparent 35%
+					),
+					var(--light-bg);
 			}
 
 			.message {
-				margin-bottom: 1rem;
-				padding: 0.75rem;
-				border-radius: 8px;
-				max-width: 80%;
+				margin-bottom: 16px;
+				padding: 14px 16px;
+				border-radius: 16px;
+				max-width: 82%;
+				font-size: 0.98rem;
+				box-shadow: 0 3px 12px rgba(11, 25, 56, 0.04);
 			}
 
 			.message p {
@@ -76,58 +157,95 @@
 			}
 
 			.user-message {
-				background-color: var(--user-msg-bg);
+				background: var(--user-msg-bg);
+				border: 1px solid #d5e2ff;
 				align-self: flex-end;
 				margin-left: auto;
+				border-bottom-right-radius: 5px;
 			}
 
 			.assistant-message {
-				background-color: var(--assistant-msg-bg);
+				background: var(--assistant-msg-bg);
+				border: 1px solid #e2e7ef;
 				align-self: flex-start;
+				border-bottom-left-radius: 5px;
 			}
 
 			.message-input {
 				display: flex;
-				padding: 0.75rem;
+				gap: 10px;
+				padding: 14px;
 				border-top: 1px solid var(--border-color);
-				background-color: white;
+				background: var(--white);
 			}
 
 			#user-input {
 				flex: 1;
-				padding: 0.75rem;
+				width: 100%;
+				padding: 13px 15px;
 				border: 1px solid var(--border-color);
-				border-radius: 4px;
+				border-radius: 13px;
 				font-family: inherit;
+				font-size: 1rem;
+				color: var(--text-color);
+				background: #fbfcff;
 				resize: none;
-				min-height: 44px;
+				min-height: 48px;
+				outline: none;
+				transition:
+					border-color 0.2s,
+					box-shadow 0.2s;
+			}
+
+			#user-input:focus {
+				border-color: var(--primary-color);
+				box-shadow: 0 0 0 3px rgba(31, 92, 245, 0.12);
+			}
+
+			#user-input::placeholder {
+				color: #8a94a6;
 			}
 
 			#send-button {
-				margin-left: 0.5rem;
-				padding: 0 1rem;
-				background-color: var(--primary-color);
+				flex-shrink: 0;
+				padding: 0 22px;
+				background: var(--primary-color);
 				color: white;
 				border: none;
-				border-radius: 4px;
+				border-radius: 13px;
 				cursor: pointer;
-				transition: background-color 0.2s;
+				font-family: inherit;
+				font-size: 1rem;
+				font-weight: 700;
+				transition:
+					background 0.2s,
+					transform 0.15s,
+					box-shadow 0.2s;
+				box-shadow: 0 8px 18px rgba(31, 92, 245, 0.2);
 			}
 
 			#send-button:hover {
-				background-color: var(--primary-hover);
+				background: var(--primary-hover);
+				box-shadow: 0 10px 22px rgba(31, 92, 245, 0.27);
+			}
+
+			#send-button:active {
+				transform: translateY(1px);
 			}
 
 			#send-button:disabled {
-				background-color: var(--text-light);
+				background: #9aa4b5;
 				cursor: not-allowed;
+				box-shadow: none;
 			}
 
 			.typing-indicator {
 				display: none;
 				font-style: italic;
 				color: var(--text-light);
-				padding: 1rem;
+				padding: 10px 22px;
+				background: var(--white);
+				font-size: 0.9rem;
 			}
 
 			.typing-indicator.visible {
@@ -135,49 +253,161 @@
 			}
 
 			footer {
-				margin-top: 1rem;
+				padding: 20px 10px 5px;
 				text-align: center;
-				font-size: 0.85rem;
+				font-size: 0.82rem;
 				color: var(--text-light);
+			}
+
+			footer strong {
+				color: var(--navy);
+			}
+
+			@media (max-width: 600px) {
+				.page {
+					padding: 0 10px 18px;
+				}
+
+				header {
+					padding: 22px 8px 18px;
+					margin-bottom: 12px;
+				}
+
+				.logo {
+					width: 50px;
+					height: 50px;
+					border-radius: 15px;
+					font-size: 24px;
+					margin-bottom: 10px;
+				}
+
+				h1 {
+					font-size: 1.7rem;
+				}
+
+				.subtitle {
+					font-size: 0.9rem;
+				}
+
+				.badge {
+					font-size: 0.78rem;
+					margin-top: 10px;
+				}
+
+				.chat-container {
+					height: calc(100vh - 235px);
+					min-height: 450px;
+					border-radius: 17px;
+				}
+
+				.chat-messages {
+					padding: 15px;
+				}
+
+				.message {
+					max-width: 90%;
+					padding: 12px 14px;
+					font-size: 0.95rem;
+				}
+
+				.message-input {
+					padding: 10px;
+					gap: 7px;
+				}
+
+				#user-input {
+					min-height: 46px;
+					padding: 11px 12px;
+					font-size: 0.95rem;
+				}
+
+				#send-button {
+					padding: 0 16px;
+					font-size: 0.95rem;
+					border-radius: 11px;
+				}
+
+				footer {
+					padding-top: 15px;
+				}
+			}
+
+			@media (max-width: 380px) {
+				#send-button {
+					padding: 0 12px;
+				}
+
+				.message {
+					max-width: 94%;
+				}
 			}
 		</style>
 	</head>
+
 	<body>
-		<header>
-			<h1>Cloudflare AI Chat</h1>
-			<p>Powered by Cloudflare Workers AI</p>
-		</header>
+		<div class="page">
 
-		<div class="chat-container">
-			<div id="chat-messages" class="chat-messages">
-				<div class="message assistant-message">
-					<p>
-						Hello! I'm an LLM chat app powered by Cloudflare Workers AI. How can
-						I help you today?
-					</p>
+			<header>
+				<div class="logo">AI</div>
+
+				<h1>OnlineFacilePro AI</h1>
+
+				<p class="subtitle">
+					Il tuo assistente intelligente per AI, strumenti digitali e nuove opportunità.
+				</p>
+
+				<div class="badge">
+					🤖 Assistente AI di OnlineFacilePro
 				</div>
+			</header>
+
+			<div class="chat-container">
+
+				<div id="chat-messages" class="chat-messages">
+
+					<div class="message assistant-message">
+						<p>
+							Ciao! 👋 Sono l'assistente AI di OnlineFacilePro.
+							<br><br>
+							Puoi chiedermi informazioni su intelligenza artificiale,
+							strumenti digitali, lavoro online, TikTok, produttività
+							e molto altro.
+							<br><br>
+							Come posso aiutarti?
+						</p>
+					</div>
+
+				</div>
+
+				<div class="typing-indicator" id="typing-indicator">
+					Sto elaborando la risposta...
+				</div>
+
+				<div class="message-input">
+
+					<textarea
+						id="user-input"
+						placeholder="Scrivi qui la tua domanda..."
+						rows="1"
+						autofocus
+					></textarea>
+
+					<button id="send-button">
+						Invia
+					</button>
+
+				</div>
+
 			</div>
 
-			<div class="typing-indicator" id="typing-indicator">
-				AI is thinking...
-			</div>
+			<footer>
+				<p>
+					<strong>OnlineFacilePro AI</strong> · Assistente basato su Cloudflare Workers AI · © 2026
+				</p>
+			</footer>
 
-			<div class="message-input">
-				<textarea
-					id="user-input"
-					placeholder="Type your message here..."
-					rows="1"
-					autofocus
-				></textarea>
-				<button id="send-button">Send</button>
-			</div>
 		</div>
 
-		<footer>
-			<p>Cloudflare Workers AI Chat Template &copy; 2025</p>
-		</footer>
-
-		<!-- Chat app script -->
 		<script src="chat.js"></script>
 	</body>
 </html>
