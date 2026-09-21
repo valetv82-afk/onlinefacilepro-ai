@@ -37,7 +37,10 @@ export default {
 	): Promise<Response> {
 		const url = new URL(request.url);
 
-		if (url.pathname === "/" || !url.pathname.startsWith("/api/")) {
+		if (
+			url.pathname === "/" ||
+			!url.pathname.startsWith("/api/")
+		) {
 			return env.ASSETS.fetch(request);
 		}
 
@@ -68,7 +71,11 @@ async function handleChatRequest(
 
 		const messages = [...(body.messages ?? [])];
 
-		if (!messages.some((message) => message.role === "system")) {
+		if (
+			!messages.some(
+				(message) => message.role === "system",
+			)
+		) {
 			messages.unshift({
 				role: "system",
 				content: SYSTEM_PROMPT,
@@ -80,27 +87,66 @@ async function handleChatRequest(
 			{
 				messages,
 				max_tokens: 512,
-
-				// Disattiva il ragionamento esteso:
-				// vogliamo una risposta rapida per il chatbot.
 				chat_template_kwargs: {
 					enable_thinking: false,
 				},
 			},
 			{
-				// Se il modello è occupato, restituisce subito
-				// un errore invece di lasciare la richiesta in coda.
 				rejectIfBusy: true,
 			},
 		);
 
-		return Response.json(result);
+		// Normalizziamo la risposta di Workers AI
+		const aiResult = result as {
+			response?: unknown;
+			result?: {
+				response?: unknown;
+			};
+		};
+
+		let responseText = "";
+
+		if (typeof aiResult.response === "string") {
+			responseText = aiResult.response;
+		} else if (
+			aiResult.result &&
+			typeof aiResult.result.response === "string"
+		) {
+			responseText = aiResult.result.response;
+		}
+
+		if (!responseText) {
+			console.error(
+				"Workers AI ha restituito un formato inatteso:",
+				JSON.stringify(result),
+			);
+
+			return Response.json(
+				{
+					response:
+						"Non sono riuscito a ottenere una risposta dall'AI. Riprova tra qualche secondo.",
+				},
+				{
+					status: 502,
+				},
+			);
+		}
+
+		// Il sito riceverà sempre questo formato:
+		// { "response": "testo della risposta" }
+
+		return Response.json({
+			response: responseText,
+		});
 	} catch (error) {
-		console.error("Errore Workers AI:", error);
+		console.error(
+			"Errore Workers AI:",
+			error,
+		);
 
 		return Response.json(
 			{
-				error:
+				response:
 					"Il servizio AI è momentaneamente occupato. Riprova tra qualche secondo.",
 			},
 			{
