@@ -127,7 +127,6 @@ function extractResponseText(data) {
 		return "";
 	}
 
-	// Formato principale Workers AI
 	if (
 		typeof data.response === "string" &&
 		data.response.trim()
@@ -135,7 +134,6 @@ function extractResponseText(data) {
 		return data.response;
 	}
 
-	// response annidata
 	if (
 		data.response &&
 		typeof data.response === "object"
@@ -148,7 +146,6 @@ function extractResponseText(data) {
 		}
 	}
 
-	// result.response
 	if (
 		data.result &&
 		typeof data.result === "object"
@@ -161,7 +158,6 @@ function extractResponseText(data) {
 		}
 	}
 
-	// Formato OpenAI
 	if (
 		Array.isArray(data.choices) &&
 		data.choices.length > 0
@@ -183,7 +179,6 @@ function extractResponseText(data) {
 		}
 	}
 
-	// Alcuni output possono usare "text"
 	if (
 		typeof data.text === "string" &&
 		data.text.trim()
@@ -191,7 +186,6 @@ function extractResponseText(data) {
 		return data.text;
 	}
 
-	// Ultimo tentativo: cerca ricorsivamente
 	if (typeof data === "object") {
 		for (const key of Object.keys(data)) {
 			const value = data[key];
@@ -244,3 +238,32 @@ function addMessageToChat(role, content) {
 	chatMessages.scrollTop =
 		chatMessages.scrollHeight;
 }
+
+/**
+ * DOMANDA PROVENIENTE DALLA HOME
+ *
+ * Se la Home apre:
+ * https://ai.onlinefacilepro.it/?q=...
+ *
+ * la domanda viene inserita automaticamente
+ * e inviata all'AI.
+ */
+document.addEventListener("DOMContentLoaded", function () {
+	const params = new URLSearchParams(window.location.search);
+	const question = params.get("q");
+
+	if (!question || !question.trim()) {
+		return;
+	}
+
+	const decodedQuestion = question.trim();
+
+	userInput.value = decodedQuestion;
+
+	userInput.style.height = "auto";
+	userInput.style.height = userInput.scrollHeight + "px";
+
+	setTimeout(function () {
+		sendMessage();
+	}, 400);
+});
